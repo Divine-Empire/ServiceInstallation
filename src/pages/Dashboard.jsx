@@ -45,145 +45,54 @@ import {
 const Dashboard = () => {
   const [sheetData, setSheetData] = useState([]);
   const [installationData, setInstallationData] = useState([]);
-  const [serviceIntimationData, setServiceIntimationData] = useState([]);
-  const [loadingData, setLoadingData] = useState(false);
+  const [loaderSheetData, setLoaderSheetData] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [showFileModal, setShowFileModal] = useState(false);
 
   // Updated configuration for your Google Sheets
-  const API_URL = "https://script.google.com/macros/s/AKfycbyu-ZSfqc7JeysL6qh62ySVaCib8DUUyan1F7Bk6TxsTu6mfn0X9cyw78rK2TawiOKz/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyu-ZSfqc7JeysL6qh62ySVaCib8DUUyan1F7Bk6TxsTu6mfn0X9cyw78rK2TawiOKz/exec";
+  const SHEET_NAME = "FMS";
+  const SHEET_ID = "1Y6f5BiPuUfuGgPRK2AEE8NyAvJ9kOQxHMXd2ED1R6rU";
 
-  // Fetch data from Google Sheets
-  const fetchSheetData = async (sheetName) => {
+  const fetchSheetData = async () => {
     try {
-      const response = await fetch(`${API_URL}?sheet=${sheetName}&action=fetch`);
+      setLoaderSheetData(true);
+      console.log("Fetching sheet data...");
+      
+      const response = await fetch(`${SCRIPT_URL}?sheet=${SHEET_NAME}&action=fetch`);
       const result = await response.json();
-      
+
       if (result.success && result.data) {
-        console.log(`${sheetName} data fetched:`, result.data.length, 'rows');
-        return result.data;
+        console.log("Raw sheet data:", result.data);
+        
+        // Get data starting from row 7 (index 6 in 0-based array)
+        const dataRows = result.data.slice(6); // Skip first 6 rows to start from row 7
+        
+        // Filter out completely empty rows
+        const filteredData = dataRows.filter(row => 
+          row.some(cell => cell !== null && cell !== undefined && cell !== '')
+        );
+        
+        console.log("Filtered data rows:", filteredData.length);
+        setSheetData(filteredData);
+        setInstallationData(filteredData);
       } else {
-        console.error(`Failed to fetch ${sheetName} data:`, result.error);
-        return [];
+        console.error("Failed to fetch sheet data:", result.error || result.message);
+        // Fallback to mock data for demo
+        setInstallationData([]);
       }
-    } catch (error) {
-      console.error(`Error fetching ${sheetName} data:`, error);
-      return [];
-    }
-  };
-
-  // Process FMS data
-  const processFMSData = (rawData) => {
-    if (rawData && rawData.length > 6) {
-      // Data starts from row 7 (index 6), skip header rows
-      const dataRows = rawData.slice(6);
-      console.log('FMS raw data rows after header skip:', dataRows.length);
-      
-      // Filter out completely empty rows
-      const filteredData = dataRows.filter(row => 
-        row.some(cell => cell !== null && cell !== undefined && cell !== '')
-      );
-      
-      console.log('Processed FMS data:', filteredData.length, 'records');
-      return filteredData;
-    } else {
-      console.log('No FMS data or insufficient rows');
-      return [];
-    }
-  };
-
-  // Process Service Installation data
-  const processServiceInstallationData = (rawData) => {
-    if (rawData && rawData.length > 0) {
-      // Skip header row if exists
-      const dataRows = rawData.slice(1);
-      console.log('Service Installation raw data rows after header skip:', dataRows.length);
-      
-      const filteredData = dataRows.filter(row => 
-        row[2] && row[2].toString().trim() !== '' // Filter by Order No (Column C)
-      );
-      
-      console.log('Processed Service Installation data:', filteredData.length, 'records');
-      return filteredData;
-    } else {
-      console.log('No Service Installation data');
-      return [];
-    }
-  };
-
-  // Process Service Intimation data
-  const processServiceIntimationData = (rawData) => {
-    if (rawData && rawData.length > 0) {
-      // Skip header row if exists
-      const dataRows = rawData.slice(1);
-      console.log('Service Intimation raw data rows after header skip:', dataRows.length);
-      
-      const filteredData = dataRows.filter(row => 
-        row[2] && row[2].toString().trim() !== '' // Filter by Order No (Column C)
-      );
-      
-      console.log('Processed Service Intimation data:', filteredData.length, 'records');
-      return filteredData;
-    } else {
-      console.log('No Service Intimation data');
-      return [];
-    }
-  };
-
-  // Load all data simultaneously with synchronized updates
-  const loadAllData = async () => {
-    console.log('=== STARTING DASHBOARD SYNCHRONIZED DATA LOADING ===');
-    setLoadingData(true);
-    
-    try {
-      // Fetch all raw data simultaneously
-      console.log('Fetching all sheets simultaneously...');
-      const [fmsRawData, serviceInstallationRawData, serviceIntimationRawData] = await Promise.all([
-        fetchSheetData("FMS"),
-        fetchSheetData("Service Installation"),
-        fetchSheetData("Service Intimation")
-      ]);
-      
-      console.log('Raw data fetched successfully');
-      console.log('- FMS rows:', fmsRawData?.length || 0);
-      console.log('- Service Installation rows:', serviceInstallationRawData?.length || 0);
-      console.log('- Service Intimation rows:', serviceIntimationRawData?.length || 0);
-      
-      // Process all data simultaneously
-      console.log('Processing all data...');
-      const processedFMSData = processFMSData(fmsRawData);
-      const processedServiceInstallationData = processServiceInstallationData(serviceInstallationRawData);
-      const processedServiceIntimationData = processServiceIntimationData(serviceIntimationRawData);
-      
-      // Update all state simultaneously
-      console.log('Updating all state simultaneously...');
-      setSheetData(processedFMSData);
-      setInstallationData(processedFMSData);
-      setServiceIntimationData(processedServiceIntimationData);
-      
-      console.log('=== DASHBOARD DATA LOADING COMPLETED SUCCESSFULLY ===');
-      console.log('Final counts:');
-      console.log('- FMS records:', processedFMSData.length);
-      console.log('- Service Installation records:', processedServiceInstallationData.length);
-      console.log('- Service Intimation records:', processedServiceIntimationData.length);
-      
-    } catch (error) {
-      console.error('=== DASHBOARD DATA LOADING FAILED ===');
-      console.error('Error details:', error);
-      
-      // Set empty data on error
-      setSheetData([]);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      // Fallback to mock data for demo
       setInstallationData([]);
-      setServiceIntimationData([]);
     } finally {
-      setLoadingData(false);
-      console.log('=== DASHBOARD DATA LOADING PROCESS FINISHED ===');
+      setLoaderSheetData(false);
     }
   };
 
-  // Load all data on component mount
   useEffect(() => {
-    loadAllData();
+    fetchSheetData();
   }, []);
 
   // Calculate statistics based on your requirements
@@ -225,13 +134,6 @@ const Dashboard = () => {
       return (columnV !== null && columnV !== undefined && columnV !== '') && 
              (columnW !== null && columnW !== undefined && columnW !== '');
     }).length;
-
-    console.log('Dashboard Statistics:', {
-      totalOrders,
-      pendingIntimations,
-      pendingFollowups,
-      completedServices
-    });
 
     return {
       totalOrders,
@@ -306,15 +208,15 @@ const Dashboard = () => {
   return (
     <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Service & Installation Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Service & Installation</h1>
         <div className="flex items-center space-x-4">
           <button
-            onClick={loadAllData}
-            disabled={loadingData}
+            onClick={fetchSheetData}
+            disabled={loaderSheetData}
             className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
           >
-            <RefreshCw size={16} className={loadingData ? "animate-spin" : ""} />
-            <span>{loadingData ? 'Loading...' : 'Refresh Data'}</span>
+            <RefreshCw size={16} className={loaderSheetData ? "animate-spin" : ""} />
+            <span>Refresh Data</span>
           </button>
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Calendar size={16} />
@@ -323,15 +225,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Loading Indicator */}
-      {loadingData && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-5 h-5 border-2 border-blue-500 border-dashed rounded-full animate-spin"></div>
-            <span className="text-blue-700 font-medium">Loading dashboard data...</span>
-          </div>
-        </div>
-      )}
+
 
       {/* Main KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -348,9 +242,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="mt-2">
-            <p className="text-xs text-gray-400">All orders in the system</p>
-          </div>
         </div>
 
         {/* Pending Intimations */}
@@ -365,9 +256,6 @@ const Dashboard = () => {
                 <h3 className="text-3xl font-bold text-gray-900">{stats.pendingIntimations}</h3>
               </div>
             </div>
-          </div>
-          <div className="mt-2">
-            <p className="text-xs text-gray-400">Orders awaiting intimation</p>
           </div>
         </div>
 
@@ -384,9 +272,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="mt-2">
-            <p className="text-xs text-gray-400">Services needing followup</p>
-          </div>
         </div>
 
         {/* Completed Services */}
@@ -401,9 +286,6 @@ const Dashboard = () => {
                 <h3 className="text-3xl font-bold text-gray-900">{stats.completedServices}</h3>
               </div>
             </div>
-          </div>
-          <div className="mt-2">
-            <p className="text-xs text-gray-400">Successfully completed</p>
           </div>
         </div>
       </div>
@@ -515,9 +397,6 @@ const Dashboard = () => {
           
           {/* Table Footer */}
           <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 rounded-b-lg">
-            {tableData.length === 0 && !loadingData && (
-              <p className="text-sm text-gray-500 text-center">No data available</p>
-            )}
           </div>
         </div>
       </div>
