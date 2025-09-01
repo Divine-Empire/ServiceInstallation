@@ -79,7 +79,7 @@ const ServiceIntimation = () => {
             serviceVideo: row[12] || "", // Column M
             remarks: row[13] || "", // Column N
             columnP: row[15] || "", // Column P (index 15)
-            columnQ: row[16] || "", // Column Q (index 16)
+            columnQ: row[16], // Column Q (index 16)
             workingHoursShared: row[21] || "", // Column V (index 21)
             nextDate: formatDateForDisplay(row[22]) || "", // Column W (index 22)
           };
@@ -90,7 +90,12 @@ const ServiceIntimation = () => {
               orderNo: record.orderNo,
               columnP: record.columnP,
               columnQ: record.columnQ,
-              shouldShow: record.orderNo && record.columnP && record.columnP.trim() !== "" && (!record.columnQ || record.columnQ.trim() === "")
+              columnQType: typeof record.columnQ,
+              workingHoursShared: record.workingHoursShared,
+              workingHoursSharedType: typeof record.workingHoursShared,
+              nextDate: record.nextDate,
+              nextDateType: typeof record.nextDate,
+              shouldShow: record.orderNo && record.columnP && record.columnP.trim() !== "" && (!record.columnQ || String(record.columnQ).trim() === "")
             });
           }
 
@@ -98,14 +103,26 @@ const ServiceIntimation = () => {
         })
         .filter(record => {
           // Show in pending if: Column P is not null/empty AND Column Q is null/empty
-          const hasOrderNo = record.orderNo && record.orderNo.trim() !== "";
-          const hasColumnP = record.columnP && record.columnP.trim() !== "";
-          const columnQEmpty = !record.columnQ || record.columnQ.trim() === "";
+          const hasOrderNo = record.orderNo && String(record.orderNo).trim() !== "";
+          const hasColumnP = record.columnP && String(record.columnP).trim() !== "";
+          const columnQEmpty = !record.columnQ || String(record.columnQ).trim() === "";
 
           return hasOrderNo && hasColumnP && columnQEmpty;
         });
 
+
+
       console.log('Processed service installation pending data:', formattedData.length, 'records');
+      if (formattedData.length > 0) {
+        console.log('Sample pending records with working hours and next date:');
+        formattedData.slice(0, 3).forEach((record, idx) => {
+          console.log(`Record ${idx}:`, {
+            orderNo: record.orderNo,
+            workingHoursShared: record.workingHoursShared,
+            nextDate: record.nextDate
+          });
+        });
+      }
       return formattedData;
     } else {
       console.log('No Service Installation data or insufficient rows');
@@ -540,9 +557,9 @@ const ServiceIntimation = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Invoice No
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Working Hours Shared
-                </th>
+                </th> */}
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Next Date
                 </th>
@@ -571,6 +588,9 @@ const ServiceIntimation = () => {
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Service Video Upload
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Working Hours Shared
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Remarks
@@ -641,9 +661,6 @@ const ServiceIntimation = () => {
                     {record.invoiceNo}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {record.workingHoursShared || '-'}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                     {record.nextDate || '-'}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -693,6 +710,9 @@ const ServiceIntimation = () => {
                             <Eye size={16} />
                           </button>
                         ) : '-'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {record.workingHoursShared || '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         {record.remarks || '-'}
