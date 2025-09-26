@@ -57,21 +57,21 @@ const Dashboard = () => {
     try {
       setLoaderSheetData(true);
       console.log("Fetching sheet data...");
-      
+
       const response = await fetch(`${SCRIPT_URL}?sheet=${SHEET_NAME}&action=fetch`);
       const result = await response.json();
 
       if (result.success && result.data) {
         console.log("Raw sheet data:", result.data);
-        
+
         // Get data starting from row 7 (index 6 in 0-based array)
         const dataRows = result.data.slice(6); // Skip first 6 rows to start from row 7
-        
+
         // Filter out completely empty rows
-        const filteredData = dataRows.filter(row => 
+        const filteredData = dataRows.filter(row =>
           row.some(cell => cell !== null && cell !== undefined && cell !== '')
         );
-        
+
         console.log("Filtered data rows:", filteredData.length);
         setSheetData(filteredData);
         setInstallationData(filteredData);
@@ -105,32 +105,32 @@ const Dashboard = () => {
     }
 
     // Total Orders: Count from Column B (index 1)
-    const totalOrders = installationData.filter(row => 
+    const totalOrders = installationData.filter(row =>
       row[1] !== null && row[1] !== undefined && row[1] !== ''
     ).length;
-    
+
     // Pending Intimations: Column K (index 10) = Not Null and Column L (index 11) = Null
     const pendingIntimations = installationData.filter(row => {
       const columnK = row[10]; // Column K
       const columnL = row[11]; // Column L
-      return (columnK !== null && columnK !== undefined && columnK !== '') && 
-             (columnL === null || columnL === undefined || columnL === '');
+      return (columnK !== null && columnK !== undefined && columnK !== '') &&
+        (columnL === null || columnL === undefined || columnL === '');
     }).length;
-    
+
     // Pending Followups: Column V (index 21) = Not Null and Column W (index 22) = Null
     const pendingFollowups = installationData.filter(row => {
       const columnV = row[21]; // Column V
       const columnW = row[22]; // Column W
-      return (columnV !== null && columnV !== undefined && columnV !== '') && 
-             (columnW === null || columnW === undefined || columnW === '');
+      return (columnV !== null && columnV !== undefined && columnV !== '') &&
+        (columnW === null || columnW === undefined || columnW === '');
     }).length;
-    
+
     // Completed Services: Column V (index 21) = Not Null and Column W (index 22) = Not Null
     const completedServices = installationData.filter(row => {
       const columnV = row[21]; // Column V
       const columnW = row[22]; // Column W
-      return (columnV !== null && columnV !== undefined && columnV !== '') && 
-             (columnW !== null && columnW !== undefined && columnW !== '');
+      return (columnV !== null && columnV !== undefined && columnV !== '') &&
+        (columnW !== null && columnW !== undefined && columnW !== '');
     }).length;
 
     return {
@@ -166,13 +166,13 @@ const Dashboard = () => {
     if (filePath && filePath.trim() !== '') {
       // Check if the filePath is a URL (Google Drive link or other URL)
       const isUrl = filePath && (filePath.startsWith('http://') || filePath.startsWith('https://'));
-      
+
       if (isUrl) {
         // Check if it's a Google Drive link and format it for direct viewing
         const isGoogleDriveLink = filePath.includes('drive.google.com');
-        
+
         let finalUrl = filePath;
-        
+
         if (isGoogleDriveLink) {
           // For Google Drive links, extract file ID and use viewer
           if (filePath.includes('/view')) {
@@ -183,7 +183,7 @@ const Dashboard = () => {
             finalUrl = filePath + '/preview';
           }
         }
-        
+
         // Open in new tab
         window.open(finalUrl, '_blank', 'noopener,noreferrer');
       } else {
@@ -331,13 +331,12 @@ const Dashboard = () => {
                       {order["Order No."] || "-"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap border-r border-gray-100">
-                      <span className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${
-                        order["Is Installation Required Or Not?"] === "Yes"
+                      <span className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${order["Is Installation Required Or Not?"] === "Yes"
                           ? "bg-blue-100 text-blue-800"
                           : order["Is Installation Required Or Not?"] === "No"
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}>
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}>
                         {order["Is Installation Required Or Not?"] || "-"}
                       </span>
                     </td>
@@ -374,14 +373,17 @@ const Dashboard = () => {
                       ) : "-"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {order["Actual material rcvd (plan)"] || "-"}
+                      {order["Actual material rcvd (plan)"]
+                        ? new Date(order["Actual material rcvd (plan)"]).toLocaleDateString("en-GB")
+                        : "-"}
                     </td>
+
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          
+
           {/* Table Footer */}
           <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 rounded-b-lg">
           </div>
