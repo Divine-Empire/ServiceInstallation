@@ -26,30 +26,36 @@ const ServiceIntimation = () => {
   const [pendingData, setPendingData] = useState([]);
   const [historyData, setHistoryData] = useState([]);
 
-  const API_URL = "https://script.google.com/macros/s/AKfycbzuNLpnDvKCNwtfWvNttA3SZEl0EBNTdszqFDRu4eqjrQSJvy9lA7UG-NAGrbMqCx5d/exec";
+  const [dateFilterTabDueDate, setDateFilterTabDueDate] = useState("");
+  const [dateFilterTabNextDate, setDateFilterTabNextDate] = useState("");
+
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycbzuNLpnDvKCNwtfWvNttA3SZEl0EBNTdszqFDRu4eqjrQSJvy9lA7UG-NAGrbMqCx5d/exec";
 
   const [intimationData, setIntimationData] = useState({
     followupStatus: "",
     workingHours: "",
     nextDate: "",
-    remarks: ""
+    remarks: "",
   });
 
   // Fetch data from Google Sheets
   const fetchSheetData = async (sheetName) => {
     try {
-      const response = await fetch(`${API_URL}?sheet=${sheetName}&action=fetch`);
+      const response = await fetch(
+        `${API_URL}?sheet=${sheetName}&action=fetch`
+      );
       const result = await response.json();
 
       if (result.success && result.data) {
-        console.log(`${sheetName} data fetched:`, result.data.length, 'rows');
+        // console.log(`${sheetName} data fetched:`, result.data.length, 'rows');
         return result.data;
       } else {
-        console.error(`Failed to fetch ${sheetName} data:`, result.error);
+        // console.error(`Failed to fetch ${sheetName} data:`, result.error);
         return [];
       }
     } catch (error) {
-      console.error(`Error fetching ${sheetName} data:`, error);
+      // console.error(`Error fetching ${sheetName} data:`, error);
       return [];
     }
   };
@@ -59,7 +65,7 @@ const ServiceIntimation = () => {
     if (rawData && rawData.length > 6) {
       // Data starts from row 7 (index 6), skip header rows
       const dataRows = rawData.slice(6);
-      console.log('Service Installation raw data rows after header skip:', dataRows.length);
+      // console.log('Service Installation raw data rows after header skip:', dataRows.length);
 
       const formattedData = dataRows
         .map((row, index) => {
@@ -82,50 +88,52 @@ const ServiceIntimation = () => {
             columnQ: row[16], // Column Q (index 16)
             workingHoursShared: row[21] || "", // Column V (index 21)
             nextDate: formatDateForDisplay(row[22]) || "", // Column W (index 22)
+            dueDate: formatDateForDisplay(row[25]) || "", // Column W (index 22)
           };
 
           // Debug logging for filtering
-          if (index < 5) {
-            console.log(`Service Installation Row ${index}:`, {
-              orderNo: record.orderNo,
-              columnP: record.columnP,
-              columnQ: record.columnQ,
-              columnQType: typeof record.columnQ,
-              workingHoursShared: record.workingHoursShared,
-              workingHoursSharedType: typeof record.workingHoursShared,
-              nextDate: record.nextDate,
-              nextDateType: typeof record.nextDate,
-              shouldShow: record.orderNo && record.columnP && record.columnP.trim() !== "" && (!record.columnQ || String(record.columnQ).trim() === "")
-            });
-          }
+          // if (index < 5) {
+          //   console.log(`Service Installation Row ${index}:`, {
+          //     orderNo: record.orderNo,
+          //     columnP: record.columnP,
+          //     columnQ: record.columnQ,
+          //     columnQType: typeof record.columnQ,
+          //     workingHoursShared: record.workingHoursShared,
+          //     workingHoursSharedType: typeof record.workingHoursShared,
+          //     nextDate: record.nextDate,
+          //     nextDateType: typeof record.nextDate,
+          //     shouldShow: record.orderNo && record.columnP && record.columnP.trim() !== "" && (!record.columnQ || String(record.columnQ).trim() === "")
+          //   });
+          // }
 
           return record;
         })
-        .filter(record => {
+        .filter((record) => {
           // Show in pending if: Column P is not null/empty AND Column Q is null/empty
-          const hasOrderNo = record.orderNo && String(record.orderNo).trim() !== "";
-          const hasColumnP = record.columnP && String(record.columnP).trim() !== "";
-          const columnQEmpty = !record.columnQ || String(record.columnQ).trim() === "";
+          const hasOrderNo =
+            record.orderNo && String(record.orderNo).trim() !== "";
+          const hasColumnP =
+            record.columnP && String(record.columnP).trim() !== "";
+          const columnQEmpty =
+            !record.columnQ || String(record.columnQ).trim() === "";
 
           return hasOrderNo && hasColumnP && columnQEmpty;
         });
 
-
-
-      console.log('Processed service installation pending data:', formattedData.length, 'records');
+      // console.log('Processed service installation pending data:', formattedData.length, 'records');
       if (formattedData.length > 0) {
-        console.log('Sample pending records with working hours and next date:');
+        // console.log('Sample pending records with working hours and next date:');
         formattedData.slice(0, 3).forEach((record, idx) => {
-          console.log(`Record ${idx}:`, {
-            orderNo: record.orderNo,
-            workingHoursShared: record.workingHoursShared,
-            nextDate: record.nextDate
-          });
+          // console.log(`Record ${idx}:`, {
+          //   orderNo: record.orderNo,
+          //   workingHoursShared: record.workingHoursShared,
+          //   nextDate: record.nextDate
+          // });
         });
       }
       return formattedData;
     } else {
-      console.log('No Service Installation data or insufficient rows');
+      // console.log('No Service Installation data or insufficient rows');
       return [];
     }
   };
@@ -135,12 +143,12 @@ const ServiceIntimation = () => {
     if (rawData && rawData.length > 0) {
       // Skip header row if exists
       const dataRows = rawData.slice(1);
-      console.log('Service Intimation raw data rows after header skip:', dataRows.length);
+      // console.log('Service Intimation raw data rows after header skip:', dataRows.length);
 
       const formattedData = dataRows
         .map((row, index) => ({
           id: `history_${index + 1}`,
-          timestamp: row[0] || "", // Column A
+          timestamp: formatDateForDisplay(row[0]) || "", // Column A
           serialNo: row[1] || "", // Column B
           orderNo: row[2] || "", // Column C
           companyName: row[3] || "", // Column D
@@ -155,60 +163,62 @@ const ServiceIntimation = () => {
           nextDate: formatDateForDisplay(row[12]) || "", // Column M
           remarks: row[13] || "", // Column N
           serviceNo: row[14] || "", // column O
-          machineFinalWorkingDay: formatDateForDisplay(row[15]) || "", // column P
+          dueDate: formatDateForDisplay(row[15]) || "", // column P
         }))
-        .filter(record => record.orderNo && record.orderNo.trim() !== ""); // Filter out empty rows
+        .filter((record) => record.orderNo && record.orderNo.trim() !== ""); // Filter out empty rows
 
-      console.log('Processed service history data:', formattedData.length, 'records');
+      // console.log('Processed service history data:', formattedData.length, 'records');
       return formattedData;
     } else {
-      console.log('No Service Intimation data');
+      // console.log('No Service Intimation data');
       return [];
     }
   };
 
   // Load all data simultaneously with synchronized updates
   const loadAllData = async () => {
-    console.log('=== STARTING SERVICE INTIMATION SYNCHRONIZED DATA LOADING ===');
+    // console.log('=== STARTING SERVICE INTIMATION SYNCHRONIZED DATA LOADING ===');
     setLoadingData(true);
 
     try {
       // Fetch all raw data simultaneously
-      console.log('Fetching all sheets simultaneously...');
-      const [serviceInstallationRawData, serviceIntimationRawData] = await Promise.all([
-        fetchSheetData("Service Installation"),
-        fetchSheetData("Service Intimation")
-      ]);
+      // console.log('Fetching all sheets simultaneously...');
+      const [serviceInstallationRawData, serviceIntimationRawData] =
+        await Promise.all([
+          fetchSheetData("Service Installation"),
+          fetchSheetData("Service Intimation"),
+        ]);
 
-      console.log('Raw data fetched successfully');
-      console.log('- Service Installation rows:', serviceInstallationRawData?.length || 0);
-      console.log('- Service Intimation rows:', serviceIntimationRawData?.length || 0);
+      // console.log('Raw data fetched successfully');
+      // console.log('- Service Installation rows:', serviceInstallationRawData?.length || 0);
+      // console.log('- Service Intimation rows:', serviceIntimationRawData?.length || 0);
 
       // Process all data simultaneously
-      console.log('Processing all data...');
-      const processedPendingData = processPendingData(serviceInstallationRawData);
+      // console.log('Processing all data...');
+      const processedPendingData = processPendingData(
+        serviceInstallationRawData
+      );
       const processedHistoryData = processHistoryData(serviceIntimationRawData);
 
       // Update all state simultaneously
-      console.log('Updating all state simultaneously...');
+      // console.log('Updating all state simultaneously...');
       setPendingData(processedPendingData);
       setHistoryData(processedHistoryData);
 
-      console.log('=== SERVICE INTIMATION DATA LOADING COMPLETED SUCCESSFULLY ===');
-      console.log('Final counts:');
-      console.log('- Pending records:', processedPendingData.length);
-      console.log('- History records:', processedHistoryData.length);
-
+      // console.log('=== SERVICE INTIMATION DATA LOADING COMPLETED SUCCESSFULLY ===');
+      // console.log('Final counts:');
+      // console.log('- Pending records:', processedPendingData.length);
+      // console.log('- History records:', processedHistoryData.length);
     } catch (error) {
-      console.error('=== SERVICE INTIMATION DATA LOADING FAILED ===');
-      console.error('Error details:', error);
+      // console.error('=== SERVICE INTIMATION DATA LOADING FAILED ===');
+      // console.error('Error details:', error);
 
       // Set empty data on error
       setPendingData([]);
       setHistoryData([]);
     } finally {
       setLoadingData(false);
-      console.log('=== SERVICE INTIMATION DATA LOADING PROCESS FINISHED ===');
+      // console.log('=== SERVICE INTIMATION DATA LOADING PROCESS FINISHED ===');
     }
   };
 
@@ -224,21 +234,21 @@ const ServiceIntimation = () => {
     }
 
     // If it contains time, extract date part
-    if (dateStr.includes(' ')) {
-      return dateStr.split(' ')[0];
+    if (dateStr.includes(" ")) {
+      return dateStr.split(" ")[0];
     }
 
     // Try to parse and format
     try {
       const date = new Date(dateStr);
       if (!isNaN(date.getTime())) {
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
         const year = date.getFullYear();
         return `${day}/${month}/${year}`;
       }
     } catch (e) {
-      console.log('Date parsing failed for:', dateStr);
+      console.log("Date parsing failed for:", dateStr);
     }
 
     return dateStr;
@@ -246,12 +256,12 @@ const ServiceIntimation = () => {
 
   // Format date to DD/MM/YYYY hh:mm:ss for storage
   const formatDateTimeForStorage = (date = new Date()) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   };
 
@@ -260,10 +270,10 @@ const ServiceIntimation = () => {
     if (!dateInput) return "";
 
     try {
-      const [year, month, day] = dateInput.split('-');
+      const [year, month, day] = dateInput.split("-");
       return `${day}/${month}/${year}`;
     } catch (e) {
-      console.log('Date formatting failed for:', dateInput);
+      console.log("Date formatting failed for:", dateInput);
       return dateInput;
     }
   };
@@ -271,14 +281,14 @@ const ServiceIntimation = () => {
   // Generate next serial number
   const generateSerialNumber = (existingData) => {
     const maxNumber = existingData.reduce((max, record) => {
-      if (record.serialNo && record.serialNo.startsWith('SF-')) {
-        const num = parseInt(record.serialNo.replace('SF-', ''));
+      if (record.serialNo && record.serialNo.startsWith("SF-")) {
+        const num = parseInt(record.serialNo.replace("SF-", ""));
         return Math.max(max, num || 0);
       }
       return max;
     }, 0);
 
-    return `SF-${String(maxNumber + 1).padStart(3, '0')}`;
+    return `SF-${String(maxNumber + 1).padStart(3, "0")}`;
   };
 
   // Submit intimation form
@@ -296,8 +306,9 @@ const ServiceIntimation = () => {
       const serialNo = generateSerialNumber(historyData);
 
       // Format next date for storage
-      const nextDateForStorage = intimationData.nextDate ?
-        formatDateForStorage(intimationData.nextDate) : "";
+      const nextDateForStorage = intimationData.nextDate
+        ? formatDateForStorage(intimationData.nextDate)
+        : "";
 
       // Prepare row data for Service Intimation sheet
       const rowData = [
@@ -314,28 +325,28 @@ const ServiceIntimation = () => {
         intimationData.followupStatus, // Column K - Followup Status
         intimationData.workingHours || "", // Column L - Working Hours
         nextDateForStorage, // Column M - Next Date
-        intimationData.remarks || "" // Column N - Remarks
+        intimationData.remarks || "", // Column N - Remarks
       ];
 
       // Submit to Google Sheets
       const formData = new URLSearchParams();
-      formData.append('sheetName', 'Service Intimation');
-      formData.append('action', 'insert');
-      formData.append('rowData', JSON.stringify(rowData));
+      formData.append("sheetName", "Service Intimation");
+      formData.append("action", "insert");
+      formData.append("rowData", JSON.stringify(rowData));
 
       const response = await fetch(API_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: formData
+        body: formData,
       });
 
       const result = await response.json();
 
       if (result.success) {
         // Refresh all data to ensure synchronization
-        console.log('Service intimation submitted successfully, refreshing all data...');
+        // console.log('Service intimation submitted successfully, refreshing all data...');
 
         // Refresh all data to maintain synchronization
         await loadAllData();
@@ -346,15 +357,17 @@ const ServiceIntimation = () => {
           followupStatus: "",
           workingHours: "",
           nextDate: "",
-          remarks: ""
+          remarks: "",
         });
-        alert('Service intimation submitted successfully!');
+        alert("Service intimation submitted successfully!");
       } else {
-        alert('Error submitting intimation: ' + (result.error || 'Unknown error'));
+        alert(
+          "Error submitting intimation: " + (result.error || "Unknown error")
+        );
       }
     } catch (error) {
-      console.error('Error submitting intimation:', error);
-      alert('Error submitting intimation: ' + error.message);
+      console.error("Error submitting intimation:", error);
+      alert("Error submitting intimation: " + error.message);
     } finally {
       setLoadingData(false);
     }
@@ -380,47 +393,51 @@ const ServiceIntimation = () => {
       followupStatus: "",
       workingHours: "",
       nextDate: "",
-      remarks: ""
+      remarks: "",
     });
     setShowIntimationModal(true);
   };
 
   // Direct file view handler - opens file in new tab
   const handleFileView = (filePath) => {
-    if (filePath && filePath.trim() !== '') {
+    if (filePath && filePath.trim() !== "") {
       // Check if the filePath is a URL (Google Drive link or other URL)
-      const isUrl = filePath && (filePath.startsWith('http://') || filePath.startsWith('https://'));
+      const isUrl =
+        filePath &&
+        (filePath.startsWith("http://") || filePath.startsWith("https://"));
 
       if (isUrl) {
         // Check if it's a Google Drive link and format it for direct viewing
-        const isGoogleDriveLink = filePath.includes('drive.google.com');
+        const isGoogleDriveLink = filePath.includes("drive.google.com");
 
         let finalUrl = filePath;
 
         if (isGoogleDriveLink) {
           // For Google Drive links, extract file ID and use viewer
-          if (filePath.includes('/view')) {
-            finalUrl = filePath.replace('/view', '/preview');
-          } else if (filePath.includes('id=')) {
-            finalUrl = `https://drive.google.com/file/d/${filePath.split('id=')[1].split('&')[0]}/preview`;
+          if (filePath.includes("/view")) {
+            finalUrl = filePath.replace("/view", "/preview");
+          } else if (filePath.includes("id=")) {
+            finalUrl = `https://drive.google.com/file/d/${
+              filePath.split("id=")[1].split("&")[0]
+            }/preview`;
           } else {
-            finalUrl = filePath + '/preview';
+            finalUrl = filePath + "/preview";
           }
         }
 
         // Open in new tab
-        window.open(finalUrl, '_blank', 'noopener,noreferrer');
+        window.open(finalUrl, "_blank", "noopener,noreferrer");
       } else {
         // For non-URL content, we could create a data URL or blob, but for simplicity
         // we'll just alert the user that it's not a viewable file
-        alert('File content: ' + filePath);
+        alert("File content: " + filePath);
       }
     }
   };
 
   const rawData = activeTab === "pending" ? pendingData : historyData;
 
-  const filteredData = rawData.filter((record) => {
+  const filteredDataa = rawData.filter((record) => {
     const companyMatch =
       selectedCompany === "all" ||
       record.companyName?.toLowerCase().includes(selectedCompany.toLowerCase());
@@ -438,16 +455,77 @@ const ServiceIntimation = () => {
     return companyMatch && statusMatch && searchMatch;
   });
 
+  const filterByDateCategoryDueDate = (data) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return data.filter((item) => {
+      if (dateFilterTabDueDate === "") return true;
+
+      if (!item.dueDate || item.dueDate === "-") return false;
+
+      // Parse DD/MM/YYYY format
+      const dateParts = item.dueDate.split("/");
+      if (dateParts.length !== 3) return false;
+
+      const nextDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+      nextDate.setHours(0, 0, 0, 0);
+
+      if (dateFilterTabDueDate === "today") {
+        return nextDate.getTime() === today.getTime();
+      } else if (dateFilterTabDueDate === "upcoming") {
+        return nextDate.getTime() > today.getTime();
+      } else if (dateFilterTabDueDate === "overdue") {
+        return nextDate.getTime() < today.getTime();
+      }
+      return true;
+    });
+  };
+
+  const filterByDateCategoryNextDate = (data) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return data.filter((item) => {
+      if (dateFilterTabNextDate === "") return true;
+
+      if (!item.nextDate || item.nextDate === "-") return false;
+
+      // Parse DD/MM/YYYY format
+      const dateParts = item.nextDate.split("/");
+      if (dateParts.length !== 3) return false;
+
+      const nextDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+      nextDate.setHours(0, 0, 0, 0);
+
+      if (dateFilterTabNextDate === "today") {
+        return nextDate.getTime() === today.getTime();
+      } else if (dateFilterTabNextDate === "upcoming") {
+        return nextDate.getTime() > today.getTime();
+      } else if (dateFilterTabNextDate === "overdue") {
+        return nextDate.getTime() < today.getTime();
+      }
+      return true;
+    });
+  };
+
+  const filteredDataAfterDueDate = filterByDateCategoryDueDate(filteredDataa);
+  const filteredData = filterByDateCategoryNextDate(filteredDataAfterDueDate);
+
+  // console.log("filteredData", filteredData);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Service Intimation Management</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Service Intimation Management
+        </h1>
         <button
           onClick={loadAllData}
           className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
           disabled={loadingData}
         >
-          {loadingData ? 'Loading...' : 'Refresh Data'}
+          {loadingData ? "Loading..." : "Refresh Data"}
         </button>
       </div>
 
@@ -477,10 +555,17 @@ const ServiceIntimation = () => {
               onChange={(e) => setSelectedCompany(e.target.value)}
             >
               <option value="all">All Companies</option>
-              {[...new Set(rawData.map(record => record.companyName).filter(name => name))]
-                .map(company => (
-                  <option key={company} value={company}>{company}</option>
-                ))}
+              {[
+                ...new Set(
+                  rawData
+                    .map((record) => record.companyName)
+                    .filter((name) => name)
+                ),
+              ].map((company) => (
+                <option key={company} value={company}>
+                  {company}
+                </option>
+              ))}
             </select>
           </div>
           {activeTab === "history" && (
@@ -499,26 +584,126 @@ const ServiceIntimation = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-4 mb-4">
-        <button
-          className={`px-4 py-2 rounded-md ${activeTab === "pending"
-            ? "bg-indigo-600 text-white"
-            : "bg-gray-200 text-gray-700"
+      <div className="sm:flex justify-between">
+        {/* Tabs */}
+        <div className="flex space-x-4 mb-4">
+          <button
+            className={`px-4 py-2 rounded-md ${
+              activeTab === "pending"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-200 text-gray-700"
             }`}
-          onClick={() => setActiveTab("pending")}
-        >
-          Pending ({pendingData.length})
-        </button>
-        <button
-          className={`px-4 py-2 rounded-md ${activeTab === "history"
-            ? "bg-indigo-600 text-white"
-            : "bg-gray-200 text-gray-700"
+            onClick={() => setActiveTab("pending")}
+          >
+            Pending ({pendingData.length})
+          </button>
+          <button
+            className={`px-4 py-2 rounded-md ${
+              activeTab === "history"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-200 text-gray-700"
             }`}
-          onClick={() => setActiveTab("history")}
-        >
-          History ({historyData.length})
-        </button>
+            onClick={() => setActiveTab("history")}
+          >
+            History ({historyData.length})
+          </button>
+        </div>
+
+        <div>
+          <h1 className=" text-gray-900">Due Date</h1>
+
+          <div className="mb-4 flex gap-2 bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 p-1 rounded-lg w-fit">
+            <button
+              type="button"
+              onClick={() => setDateFilterTabDueDate("")}
+              className={`px-4 py-2 rounded-md transition-all bg-transparent text-gray-700 hover:bg-green-100 border border-red-500`}
+            >
+              Reset
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDateFilterTabDueDate("today")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                dateFilterTabDueDate === "today"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-green-100"
+              }`}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilterTabDueDate("upcoming")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                dateFilterTabDueDate === "upcoming"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-green-100"
+              }`}
+            >
+              Upcoming
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilterTabDueDate("overdue")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                dateFilterTabDueDate === "overdue"
+                  ? "bg-red-600 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-red-100"
+              }`}
+            >
+              Overdue
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <h1>Next Date</h1>
+
+          <div className="mb-4 flex gap-2 bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 p-1 rounded-lg w-fit">
+            <button
+              type="button"
+              onClick={() => setDateFilterTabNextDate("")}
+              className={`px-4 py-2 rounded-md transition-all bg-transparent text-gray-700 hover:bg-green-100 border border-red-500`}
+            >
+              Reset
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDateFilterTabNextDate("today")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                dateFilterTabNextDate === "today"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-green-100"
+              }`}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilterTabNextDate("upcoming")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                dateFilterTabNextDate === "upcoming"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-green-100"
+              }`}
+            >
+              Upcoming
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilterTabNextDate("overdue")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                dateFilterTabNextDate === "overdue"
+                  ? "bg-red-600 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-red-100"
+              }`}
+            >
+              Overdue
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Data Table */}
@@ -593,6 +778,9 @@ const ServiceIntimation = () => {
                       Working Hours Shared
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Due Date
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Remarks
                     </th>
                   </>
@@ -615,10 +803,13 @@ const ServiceIntimation = () => {
                       Followup Status
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Time Stemp
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Working Hours
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                       Next Date
+                      Next Date
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Remarks
@@ -661,7 +852,7 @@ const ServiceIntimation = () => {
                     {record.invoiceNo}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {record.nextDate || '-'}
+                    {record.nextDate || "-"}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                     {record.invoiceDate}
@@ -672,33 +863,42 @@ const ServiceIntimation = () => {
                         {record.entryNo}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full ${record.clientStatus === 'Yes'
-                          ? 'bg-green-100 text-green-800'
-                          : record.clientStatus === 'No'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                          }`}>
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            record.clientStatus === "Yes"
+                              ? "bg-green-100 text-green-800"
+                              : record.clientStatus === "No"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
                           {record.clientStatus}
                         </span>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full ${record.intimationRequired === 'Yes'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                          }`}>
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            record.intimationRequired === "Yes"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
                           {record.intimationRequired}
                         </span>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.machineName || '-'}
+                        {record.machineName || "-"}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.installationService || '-'}
+                        {record.installationService || "-"}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center">
-                          <UserCircle size={16} className="text-gray-400 mr-2" />
-                          {record.engineerName || '-'}
+                          <UserCircle
+                            size={16}
+                            className="text-gray-400 mr-2"
+                          />
+                          {record.engineerName || "-"}
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
@@ -709,15 +909,19 @@ const ServiceIntimation = () => {
                           >
                             <Eye size={16} />
                           </button>
-                        ) : '-'}
+                        ) : (
+                          "-"
+                        )}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.workingHoursShared || '-'}
+                        {record.workingHoursShared || "-"}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.remarks || '-'}
+                        {record.dueDate || "-"}
                       </td>
-
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {record.remarks || "-"}
+                      </td>
                     </>
                   )}
                   {activeTab === "history" && (
@@ -726,39 +930,48 @@ const ServiceIntimation = () => {
                         {record.entryNo}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.machineName || '-'}
+                        {record.machineName || "-"}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.installationService || '-'}
+                        {record.installationService || "-"}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center">
-                          <UserCircle size={16} className="text-gray-400 mr-2" />
-                          {record.engineerName || '-'}
+                          <UserCircle
+                            size={16}
+                            className="text-gray-400 mr-2"
+                          />
+                          {record.engineerName || "-"}
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full ${record.followupStatus === 'Done'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                          }`}>
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            record.followupStatus === "Done"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
                           {record.followupStatus}
                         </span>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.workingHours || '-'}
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {record.followupStatus === "Done" && record.timestamp}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.nextDate || '-'}
+                        {record.workingHours || "-"}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.remarks || '-'}
+                        {record.nextDate || "-"}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.serviceNo || '-'}
+                        {record.remarks || "-"}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {record.machineFinalWorkingDay || '-'}
+                        {record.serviceNo || "-"}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {record.dueDate || "-"}
                       </td>
                     </>
                   )}
@@ -787,7 +1000,9 @@ const ServiceIntimation = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Service Intimation Form</h2>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Service Intimation Form
+              </h2>
               <button
                 onClick={() => setShowIntimationModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -805,7 +1020,7 @@ const ServiceIntimation = () => {
                   </label>
                   <input
                     type="text"
-                    value={selectedRecord?.orderNo || ''}
+                    value={selectedRecord?.orderNo || ""}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                   />
@@ -816,7 +1031,7 @@ const ServiceIntimation = () => {
                   </label>
                   <input
                     type="text"
-                    value={selectedRecord?.companyName || ''}
+                    value={selectedRecord?.companyName || ""}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                   />
@@ -830,7 +1045,7 @@ const ServiceIntimation = () => {
                   </label>
                   <input
                     type="text"
-                    value={selectedRecord?.invoiceDate || ''}
+                    value={selectedRecord?.invoiceDate || ""}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                   />
@@ -841,7 +1056,7 @@ const ServiceIntimation = () => {
                   </label>
                   <input
                     type="text"
-                    value={selectedRecord?.invoiceNo || ''}
+                    value={selectedRecord?.invoiceNo || ""}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                   />
@@ -855,7 +1070,7 @@ const ServiceIntimation = () => {
                   </label>
                   <input
                     type="text"
-                    value={selectedRecord?.machineName || ''}
+                    value={selectedRecord?.machineName || ""}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                   />
@@ -866,7 +1081,7 @@ const ServiceIntimation = () => {
                   </label>
                   <input
                     type="text"
-                    value={selectedRecord?.installationService || ''}
+                    value={selectedRecord?.installationService || ""}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                   />
@@ -879,7 +1094,7 @@ const ServiceIntimation = () => {
                 </label>
                 <input
                   type="text"
-                  value={selectedRecord?.engineerName || ''}
+                  value={selectedRecord?.engineerName || ""}
                   readOnly
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                 />
@@ -892,7 +1107,12 @@ const ServiceIntimation = () => {
                 </label>
                 <select
                   value={intimationData.followupStatus}
-                  onChange={(e) => setIntimationData({ ...intimationData, followupStatus: e.target.value })}
+                  onChange={(e) =>
+                    setIntimationData({
+                      ...intimationData,
+                      followupStatus: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">Select Status</option>
@@ -908,7 +1128,12 @@ const ServiceIntimation = () => {
                 <input
                   type="text"
                   value={intimationData.workingHours}
-                  onChange={(e) => setIntimationData({ ...intimationData, workingHours: e.target.value })}
+                  onChange={(e) =>
+                    setIntimationData({
+                      ...intimationData,
+                      workingHours: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="Enter working hours (e.g., 8 hours)"
                 />
@@ -921,7 +1146,12 @@ const ServiceIntimation = () => {
                 <input
                   type="date"
                   value={intimationData.nextDate}
-                  onChange={(e) => setIntimationData({ ...intimationData, nextDate: e.target.value })}
+                  onChange={(e) =>
+                    setIntimationData({
+                      ...intimationData,
+                      nextDate: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -932,7 +1162,12 @@ const ServiceIntimation = () => {
                 </label>
                 <textarea
                   value={intimationData.remarks}
-                  onChange={(e) => setIntimationData({ ...intimationData, remarks: e.target.value })}
+                  onChange={(e) =>
+                    setIntimationData({
+                      ...intimationData,
+                      remarks: e.target.value,
+                    })
+                  }
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="Enter any remarks or notes..."
@@ -953,7 +1188,7 @@ const ServiceIntimation = () => {
                 className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loadingData}
               >
-                {loadingData ? 'Submitting...' : 'Submit'}
+                {loadingData ? "Submitting..." : "Submit"}
               </button>
             </div>
           </div>
