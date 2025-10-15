@@ -33,6 +33,8 @@ const Intimation = () => {
     services: []
   });
 
+  const [dateFilterTabNextDate, setDateFilterTabNextDate] = useState("");
+
   const API_URL = "https://script.google.com/macros/s/AKfycbzuNLpnDvKCNwtfWvNttA3SZEl0EBNTdszqFDRu4eqjrQSJvy9lA7UG-NAGrbMqCx5d/exec";
   const DRIVE_FOLDER_ID = "1C_5l0mf4iLYkpWiJ0uL-Gs92BahBWSKp";
 
@@ -76,14 +78,14 @@ const Intimation = () => {
       const result = await response.json();
 
       if (result.success && result.data) {
-        console.log(`${sheetName} data fetched:`, result.data.length, 'rows');
+        // console.log(`${sheetName} data fetched:`, result.data.length, 'rows');
         return result.data;
       } else {
-        console.error(`Failed to fetch ${sheetName} data:`, result.error);
+        // console.error(`Failed to fetch ${sheetName} data:`, result.error);
         return [];
       }
     } catch (error) {
-      console.error(`Error fetching ${sheetName} data:`, error);
+      // console.error(`Error fetching ${sheetName} data:`, error);
       return [];
     }
   };
@@ -132,6 +134,7 @@ const Intimation = () => {
             columnK: row[10] || "",
             columnL: row[11] || "",
             nextDate: formatDateForDisplay(row[13]) || "",
+            remaks: row[15] || ""
           };
 
           if (index < 5) {
@@ -166,7 +169,7 @@ const Intimation = () => {
     if (rawData && rawData.length > 6) {
       // Changed from slice(1) to slice(6) to start from row 7 (0-based indexing)
       const dataRows = rawData.slice(6);
-      console.log('Service Installation raw data rows after row 6 header skip:', dataRows.length);
+      // console.log('Service Installation raw data rows after row 6 header skip:', dataRows.length);
 
       const formattedData = dataRows
         .map((row, index) => ({
@@ -192,10 +195,10 @@ const Intimation = () => {
         }))
         .filter(record => record.orderNo && record.orderNo.trim() !== "");
 
-      console.log('Processed history data:', formattedData.length, 'records');
+      // console.log('Processed history data:', formattedData.length, 'records');
       return formattedData;
     } else {
-      console.log('No Service Installation data or insufficient rows');
+      // console.log('No Service Installation data or insufficient rows');
       return [];
     }
   };
@@ -286,36 +289,36 @@ const Intimation = () => {
         fetchSheetData("Drop-Down Master")
       ]);
 
-      console.log('Raw data fetched successfully');
-      console.log('- FMS rows:', fmsRawData?.length || 0);
-      console.log('- Service Installation rows:', serviceRawData?.length || 0);
-      console.log('- Dropdown rows:', dropdownRawData?.length || 0);
+      // console.log('Raw data fetched successfully');
+      // console.log('- FMS rows:', fmsRawData?.length || 0);
+      // console.log('- Service Installation rows:', serviceRawData?.length || 0);
+      // console.log('- Dropdown rows:', dropdownRawData?.length || 0);
 
-      console.log('Processing all data...');
+      // console.log('Processing all data...');
       const processedPendingData = processPendingData(fmsRawData);
       const processedHistoryData = processHistoryData(serviceRawData);
       const processedDropdownData = processDropdownData(dropdownRawData);
 
-      console.log('Updating all state simultaneously...');
+      // console.log('Updating all state simultaneously...');
       setPendingData(processedPendingData);
       setHistoryData(processedHistoryData);
       setDropdownData(processedDropdownData);
 
-      console.log('=== DATA LOADING COMPLETED ===');
-      console.log('Final counts:');
-      console.log('- Pending records:', processedPendingData.length);
-      console.log('- History records:', processedHistoryData.length);
+      // console.log('=== DATA LOADING COMPLETED ===');
+      // console.log('Final counts:');
+      // console.log('- Pending records:', processedPendingData.length);
+      // console.log('- History records:', processedHistoryData.length);
 
     } catch (error) {
-      console.error('=== DATA LOADING FAILED ===');
-      console.error('Error details:', error);
+      // console.error('=== DATA LOADING FAILED ===');
+      // console.error('Error details:', error);
 
       setPendingData([]);
       setHistoryData([]);
       setDropdownData({ machines: [], engineers: [], services: [] });
     } finally {
       setLoadingData(false);
-      console.log('=== DATA LOADING FINISHED ===');
+      // console.log('=== DATA LOADING FINISHED ===');
     }
   };
 
@@ -536,7 +539,7 @@ const Intimation = () => {
       alert(`Intimation submitted successfully! ${allRowsData.length} record(s) added.`);
 
       // Force page refresh and data reload
-      console.log('Intimation submitted successfully, refreshing data...');
+      // console.log('Intimation submitted successfully, refreshing data...');
       await loadAllData();
 
       // Force component re-render by switching tabs
@@ -546,7 +549,7 @@ const Intimation = () => {
       }
 
     } catch (error) {
-      console.error('Error submitting intimation:', error);
+      // console.error('Error submitting intimation:', error);
       alert('Error submitting intimation: ' + error.message);
     } finally {
       setLoadingData(false);
@@ -595,7 +598,7 @@ const Intimation = () => {
 
   const rawData = activeTab === "pending" ? pendingData : historyData;
 
-  const filteredData = rawData.filter((record) => {
+  const filteredDataa = rawData.filter((record) => {
     const companyMatch =
       selectedCompany === "all" ||
       record.companyName?.toLowerCase().includes(selectedCompany.toLowerCase());
@@ -612,6 +615,39 @@ const Intimation = () => {
 
     return companyMatch && statusMatch && searchMatch;
   });
+
+
+
+  const filterByDateCategoryNextDate = (data) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return data.filter((item) => {
+      if (dateFilterTabNextDate === "") return true;
+
+      if (!item.nextDate || item.nextDate === "-") return false;
+
+      // Parse DD/MM/YYYY format
+      const dateParts = item.nextDate.split("/");
+      if (dateParts.length !== 3) return false;
+
+      const nextDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+      nextDate.setHours(0, 0, 0, 0);
+
+      if (dateFilterTabNextDate === "today") {
+        return nextDate.getTime() === today.getTime();
+      } else if (dateFilterTabNextDate === "upcoming") {
+        return nextDate.getTime() > today.getTime();
+      } else if (dateFilterTabNextDate === "overdue") {
+        return nextDate.getTime() < today.getTime();
+      }
+      return true;
+    });
+  };
+
+  const filteredData = filterByDateCategoryNextDate(filteredDataa);
+
+  // console.log("FilteredData",filteredData);
 
   return (
     <div className="space-y-6">
@@ -675,6 +711,8 @@ const Intimation = () => {
         </div>
       </div>
 
+      <div className="sm:flex justify-between">
+
       {/* Tabs */}
       <div className="flex space-x-4 mb-4">
         <button
@@ -696,6 +734,55 @@ const Intimation = () => {
           History ({historyData.length})
         </button>
       </div>
+
+
+       
+          <div className="mb-4 flex gap-2 bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 p-1 rounded-lg w-fit">
+            <button
+              type="button"
+              onClick={() => setDateFilterTabNextDate("")}
+              className={`px-4 py-2 rounded-md transition-all bg-transparent text-gray-700 hover:bg-green-100 border border-red-500`}
+            >
+              Reset
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDateFilterTabNextDate("today")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                dateFilterTabNextDate === "today"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-green-100"
+              }`}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilterTabNextDate("upcoming")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                dateFilterTabNextDate === "upcoming"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-green-100"
+              }`}
+            >
+              Upcoming
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilterTabNextDate("overdue")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                dateFilterTabNextDate === "overdue"
+                  ? "bg-red-600 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-red-100"
+              }`}
+            >
+              Overdue
+            </button>
+          </div>
+        
+
+        </div>
 
       {/* Data Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -740,6 +827,9 @@ const Intimation = () => {
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Next Date
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Remarks
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Invoice No
@@ -832,6 +922,9 @@ const Intimation = () => {
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                     {record.nextDate || '-'}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {record.remaks || '-'}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                     {record.invoiceNo}
