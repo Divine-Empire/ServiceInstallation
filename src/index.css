@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+
+.sticky-col {
+  position: sticky;
+  background-color: white;
+  z-index: 10;
+}
+
+.sticky-col-1 {
+  left: 0;
+}
+
+.sticky-col-2 {
+  left: 80px; /* Adjust based on your first column width */
+}
