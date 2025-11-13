@@ -80,7 +80,7 @@ const Service1 = () => {
             engineerName: row[11] || "", // Column L
             serviceVideo: row[12] || "", // Column M
             remarks: row[13] || "", // Column N
-            columnP: row[15] || "", // Column P (index 15)
+            dueDate: formatDateForDisplay(row[15]) || "", // Column P (index 15)
             columnQ: row[16], // Column Q (index 16)
 
             Plaand1: row[17], // Column Q (index 16)
@@ -88,7 +88,6 @@ const Service1 = () => {
 
             workingHoursShared: row[21] || "", // Column V (index 21)
             nextDate: formatDateForDisplay(row[22]) || "", // Column W (index 22)
-            dueDate: formatDateForDisplay(row[25]) || "", // Column W (index 22)
 
             invoiceCopy: formatDateForDisplay(row[38]) || "", // Column AL (index 22)
           };
